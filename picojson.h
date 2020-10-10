@@ -177,8 +177,8 @@ public:
   bool contains(const size_t idx) const;
   bool contains(const std::string &key) const;
   std::string to_str() const;
-  template <typename Iter> void serialize(Iter os, bool prettify = false) const;
-  std::string serialize(bool prettify = false) const;
+  template <typename Iter> void serialize(Iter os) const;
+  std::string serialize() const;
 
 private:
   template <typename T> value(const T *); // intentionally defined to block implicit conversion of pointer to bool
@@ -541,12 +541,12 @@ template <typename Iter> void serialize_str(const std::string &s, Iter oi) {
   *oi++ = '"';
 }
 
-template <typename Iter> void value::serialize(Iter oi, bool prettify) const {
-  return _serialize(oi, prettify ? 0 : -1);
+template <typename Iter> void value::serialize(Iter oi) const {
+  return _serialize(oi, -1);
 }
 
-inline std::string value::serialize(bool prettify) const {
-  return _serialize(prettify ? 0 : -1);
+inline std::string value::serialize() const {
+  return _serialize(-1);
 }
 
 template <typename Iter> void value::_indent(Iter oi, int indent) {

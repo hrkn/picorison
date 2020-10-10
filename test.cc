@@ -261,18 +261,6 @@ int main(void)
     err = picojson::parse(v, s, s + strlen(s));
     _ok(err.empty(), "parse test data for prettifying output");
     _ok(v.serialize() == R"({"a":1,"b":[2,{"b1":"abc"}],"c":{},"d":[]})", "non-prettifying output");
-    _ok(v.serialize(true) == R"({
-  "a": 1,
-  "b": [
-    2,
-    {
-      "b1": "abc"
-    }
-  ],
-  "c": {},
-  "d": []
-}
-)", "prettifying output");
   }
 
   try {
