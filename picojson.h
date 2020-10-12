@@ -457,9 +457,9 @@ inline bool value::contains(const std::string &key) const {
 inline std::string value::to_str() const {
   switch (type_) {
   case null_type:
-    return "null";
+    return "!n";
   case boolean_type:
-    return u_.boolean_ ? "true" : "false";
+    return u_.boolean_ ? "!t" : "!f";
 #ifdef PICOJSON_USE_INT64
   case int64_type: {
     char buf[sizeof("-9223372036854775808")];
@@ -817,17 +817,20 @@ template <typename Context, typename Iter> inline bool _parse(Context &ctx, inpu
   in.skip_ws();
   int ch = in.getc();
   switch (ch) {
-#define IS(ch, text, op)                                                                                                           \
-  case ch:                                                                                                                         \
-    if (in.match(text) && op) {                                                                                                    \
-      return true;                                                                                                                 \
-    } else {                                                                                                                       \
-      return false;                                                                                                                \
+  case '!':                                                                                                                         \
+    switch (in.getc()) {
+    case 'n':
+      ctx.set_null();
+      return true;
+    case 'f':
+      ctx.set_bool(false);
+      return true;
+    case 't':
+      ctx.set_bool(true);
+      return true;
+    default:
+      return false;
     }
-    IS('n', "ull", ctx.set_null());
-    IS('f', "alse", ctx.set_bool(false));
-    IS('t', "rue", ctx.set_bool(true));
-#undef IS
   case '"':
     return ctx.parse_string(in);
   case '[':
