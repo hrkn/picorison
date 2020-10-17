@@ -534,10 +534,10 @@ template <typename Iter> struct serialize_str_char {
 };
 
 template <typename Iter> void serialize_str(const std::string &s, Iter oi) {
-  *oi++ = '"';
+  *oi++ = '\'';
   serialize_str_char<Iter> process_char = {oi};
   std::for_each(s.begin(), s.end(), process_char);
-  *oi++ = '"';
+  *oi++ = '\'';
 }
 
 template <typename Iter> void value::serialize(Iter oi) const {
@@ -723,7 +723,7 @@ template <typename String, typename Iter> inline bool _parse_string(String &out,
     if (ch < ' ') {
       in.ungetc();
       return false;
-    } else if (ch == '"') {
+    } else if (ch == '\'') {
       return true;
     } else if (ch == '\\') {
       if ((ch = in.getc()) == -1) {
@@ -784,7 +784,7 @@ template <typename Context, typename Iter> inline bool _parse_object(Context &ct
   }
   do {
     std::string key;
-    if (!in.expect('"') || !_parse_string(key, in) || !in.expect(':')) {
+    if (!in.expect('\'') || !_parse_string(key, in) || !in.expect(':')) {
       return false;
     }
     if (!ctx.parse_object_item(in, key)) {
@@ -834,7 +834,7 @@ template <typename Context, typename Iter> inline bool _parse(Context &ctx, inpu
     default:
       return false;
     }
-  case '"':
+  case '\'':
     return ctx.parse_string(in);
   case '(':
     return _parse_object(ctx, in);
