@@ -566,7 +566,7 @@ template <typename Iter> void value::_serialize(Iter oi) const {
     break;
   }
   case object_type: {
-    *oi++ = '{';
+    *oi++ = '(';
     for (object::const_iterator i = u_.object_->begin(); i != u_.object_->end(); ++i) {
       if (i != u_.object_->begin()) {
         *oi++ = ',';
@@ -575,7 +575,7 @@ template <typename Iter> void value::_serialize(Iter oi) const {
       *oi++ = ':';
       i->second._serialize(oi);
     }
-    *oi++ = '}';
+    *oi++ = ')';
     break;
   }
   default:
@@ -779,7 +779,7 @@ template <typename Context, typename Iter> inline bool _parse_object(Context &ct
   if (!ctx.parse_object_start()) {
     return false;
   }
-  if (in.expect('}')) {
+  if (in.expect(')')) {
     return true;
   }
   do {
@@ -791,7 +791,7 @@ template <typename Context, typename Iter> inline bool _parse_object(Context &ct
       return false;
     }
   } while (in.expect(','));
-  return in.expect('}');
+  return in.expect(')');
 }
 
 template <typename Iter> inline std::string _parse_number(input<Iter> &in) {
@@ -836,7 +836,7 @@ template <typename Context, typename Iter> inline bool _parse(Context &ctx, inpu
     }
   case '"':
     return ctx.parse_string(in);
-  case '{':
+  case '(':
     return _parse_object(ctx, in);
   default:
     if (('0' <= ch && ch <= '9') || ch == '-') {
