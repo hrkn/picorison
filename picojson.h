@@ -554,14 +554,15 @@ template <typename Iter> void value::_serialize(Iter oi) const {
     serialize_str(*u_.string_, oi);
     break;
   case array_type: {
-    *oi++ = '[';
+    *oi++ = '!';
+    *oi++ = '(';
     for (array::const_iterator i = u_.array_->begin(); i != u_.array_->end(); ++i) {
       if (i != u_.array_->begin()) {
         *oi++ = ',';
       }
       i->_serialize(oi);
     }
-    *oi++ = ']';
+    *oi++ = ')';
     break;
   }
   case object_type: {
@@ -762,7 +763,7 @@ template <typename Context, typename Iter> inline bool _parse_array(Context &ctx
     return false;
   }
   size_t idx = 0;
-  if (in.expect(']')) {
+  if (in.expect(')')) {
     return ctx.parse_array_stop(idx);
   }
   do {
@@ -771,7 +772,7 @@ template <typename Context, typename Iter> inline bool _parse_array(Context &ctx
     }
     idx++;
   } while (in.expect(','));
-  return in.expect(']') && ctx.parse_array_stop(idx);
+  return in.expect(')') && ctx.parse_array_stop(idx);
 }
 
 template <typename Context, typename Iter> inline bool _parse_object(Context &ctx, input<Iter> &in) {
@@ -828,13 +829,13 @@ template <typename Context, typename Iter> inline bool _parse(Context &ctx, inpu
     case 't':
       ctx.set_bool(true);
       return true;
+    case '(':
+      return _parse_array(ctx, in);
     default:
       return false;
     }
   case '"':
     return ctx.parse_string(in);
-  case '[':
-    return _parse_array(ctx, in);
   case '{':
     return _parse_object(ctx, in);
   default:
