@@ -92,11 +92,11 @@ int main(void)
   TEST("90.5", double, 90.5, false);
   TEST("1.7976931348623157e+308", double, std::numeric_limits<double>::max(), false);
   TEST(R"('hello')", string, string("hello"), true);
-  TEST(R"('\"\\\/\b\f\n\r\t')", string, string("\"\\/\b\f\n\r\t"),
-       true);
-  TEST(R"('\u0061\u30af\u30ea\u30b9')", string,
+  TEST(u8R"('aクリス')", string,
        string("a\xe3\x82\xaf\xe3\x83\xaa\xe3\x82\xb9"), false);
-  TEST(R"('\ud840\udc0b')", string, string("\xf0\xa0\x80\x8b"), false);
+  TEST(u8R"('𠀋')", string, string("\xf0\xa0\x80\x8b"), false);
+  TEST(R"('Amazing!!')", string, string("Amazing!"), true);
+  TEST(R"('What!'s RISON?')", string, string("What's RISON?"), true);
 #ifdef PICOJSON_USE_INT64
   TEST("0", int64_t, 0, true);
   TEST("-9223372036854775808", int64_t, std::numeric_limits<int64_t>::min(), true);

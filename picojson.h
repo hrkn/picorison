@@ -511,20 +511,13 @@ template <typename Iter> struct serialize_str_char {
   case val:                                                                                                                        \
     copy(sym, oi);                                                                                                                 \
     break
-      MAP('"', "\\\"");
-      MAP('\\', "\\\\");
-      MAP('/', "\\/");
-      MAP('\b', "\\b");
-      MAP('\f', "\\f");
-      MAP('\n', "\\n");
-      MAP('\r', "\\r");
-      MAP('\t', "\\t");
+      MAP('!', "!!");
+      MAP('\'', "!'");
 #undef MAP
     default:
       if (static_cast<unsigned char>(c) < 0x20 || c == 0x7f) {
-        char buf[7];
-        SNPRINTF(buf, sizeof(buf), "\\u%04x", c & 0xff);
-        copy(buf, buf + 6, oi);
+        // Control character
+        // TODO(haruki): raise serialize error
       } else {
         *oi++ = c;
       }
@@ -655,68 +648,6 @@ public:
   }
 };
 
-template <typename Iter> inline int _parse_quadhex(input<Iter> &in) {
-  int uni_ch = 0, hex;
-  for (int i = 0; i < 4; i++) {
-    if ((hex = in.getc()) == -1) {
-      return -1;
-    }
-    if ('0' <= hex && hex <= '9') {
-      hex -= '0';
-    } else if ('A' <= hex && hex <= 'F') {
-      hex -= 'A' - 0xa;
-    } else if ('a' <= hex && hex <= 'f') {
-      hex -= 'a' - 0xa;
-    } else {
-      in.ungetc();
-      return -1;
-    }
-    uni_ch = uni_ch * 16 + hex;
-  }
-  return uni_ch;
-}
-
-template <typename String, typename Iter> inline bool _parse_codepoint(String &out, input<Iter> &in) {
-  int uni_ch;
-  if ((uni_ch = _parse_quadhex(in)) == -1) {
-    return false;
-  }
-  if (0xd800 <= uni_ch && uni_ch <= 0xdfff) {
-    if (0xdc00 <= uni_ch) {
-      // a second 16-bit of a surrogate pair appeared
-      return false;
-    }
-    // first 16-bit of surrogate pair, get the next one
-    if (in.getc() != '\\' || in.getc() != 'u') {
-      in.ungetc();
-      return false;
-    }
-    int second = _parse_quadhex(in);
-    if (!(0xdc00 <= second && second <= 0xdfff)) {
-      return false;
-    }
-    uni_ch = ((uni_ch - 0xd800) << 10) | ((second - 0xdc00) & 0x3ff);
-    uni_ch += 0x10000;
-  }
-  if (uni_ch < 0x80) {
-    out.push_back(static_cast<char>(uni_ch));
-  } else {
-    if (uni_ch < 0x800) {
-      out.push_back(static_cast<char>(0xc0 | (uni_ch >> 6)));
-    } else {
-      if (uni_ch < 0x10000) {
-        out.push_back(static_cast<char>(0xe0 | (uni_ch >> 12)));
-      } else {
-        out.push_back(static_cast<char>(0xf0 | (uni_ch >> 18)));
-        out.push_back(static_cast<char>(0x80 | ((uni_ch >> 12) & 0x3f)));
-      }
-      out.push_back(static_cast<char>(0x80 | ((uni_ch >> 6) & 0x3f)));
-    }
-    out.push_back(static_cast<char>(0x80 | (uni_ch & 0x3f)));
-  }
-  return true;
-}
-
 template <typename String, typename Iter> inline bool _parse_string(String &out, input<Iter> &in) {
   while (1) {
     int ch = in.getc();
@@ -725,28 +656,15 @@ template <typename String, typename Iter> inline bool _parse_string(String &out,
       return false;
     } else if (ch == '\'') {
       return true;
-    } else if (ch == '\\') {
+    } else if (ch == '!') {
+      // Escaped char
       if ((ch = in.getc()) == -1) {
         return false;
       }
       switch (ch) {
-#define MAP(sym, val)                                                                                                              \
-  case sym:                                                                                                                        \
-    out.push_back(val);                                                                                                            \
-    break
-        MAP('"', '\"');
-        MAP('\\', '\\');
-        MAP('/', '/');
-        MAP('b', '\b');
-        MAP('f', '\f');
-        MAP('n', '\n');
-        MAP('r', '\r');
-        MAP('t', '\t');
-#undef MAP
-      case 'u':
-        if (!_parse_codepoint(out, in)) {
-          return false;
-        }
+      case '!':
+      case '\'':
+        out.push_back(ch);
         break;
       default:
         return false;
