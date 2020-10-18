@@ -527,10 +527,14 @@ template <typename Iter> struct serialize_str_char {
 };
 
 template <typename Iter> void serialize_str(const std::string &s, Iter oi) {
-  *oi++ = '\'';
+  const std::string need_to_quoted = "!'(),- ";
+  bool needs_quote = std::any_of(s.begin(), s.end(), [&need_to_quoted](char c) {
+    return need_to_quoted.find(c) != std::string::npos;
+  });
+  if (needs_quote) { *oi++ = '\''; }
   serialize_str_char<Iter> process_char = {oi};
   std::for_each(s.begin(), s.end(), process_char);
-  *oi++ = '\'';
+  if (needs_quote) { *oi++ = '\''; }
 }
 
 template <typename Iter> void value::serialize(Iter oi) const {

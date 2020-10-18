@@ -53,9 +53,9 @@ int main(void)
   TEST( (true),  "!t");
   TEST( (false), "!f");
   TEST( (42.0),   "42");
-  TEST( (string("hello")), R"('hello')");
-  TEST( ("hello"), R"('hello')");
-  TEST( ("hello", 4), R"('hell')");
+  TEST( (string("hello")), "hello");
+  TEST( ("hello"), "hello");
+  TEST( ("hello", 4), "hell");
 
   {
     double a = 1;
@@ -109,7 +109,11 @@ int main(void)
   }
   TEST("!f", "!f");
   TEST("!t", "!t");
-  TEST("'hello'", "'hello'");
+  TEST("'hello'", "hello");
+  TEST("'he is hero'", "'he is hero'");
+  TEST("'-123'", "'-123'");
+  TEST("',32'", "',32'");
+  TEST("'33-4'", "'33-4'");
   TEST("'Amazing!!'", "'Amazing!!'");
   TEST("'What!'s RISON?'", "'What!'s RISON?'");
 #undef TEST
@@ -155,20 +159,20 @@ int main(void)
     _ok(v.contains("a"), "check contains property");
     _ok(v.get("a").is<bool>(), "check bool property exists");
     is(v.get("a").get<bool>(), true, "check bool property value");
-    is(v.serialize(), string(R"(('a':!t))"), "serialize object");
+    is(v.serialize(), string(R"((a:!t))"), "serialize object");
     _ok(!v.contains("z"), "check not contains property");
   }
 
   {
     picojson::value v1;
   	v1.set<picojson::object>(picojson::object());
-  	v1.get<picojson::object>()["114"] = picojson::value("514");
+    v1.get<picojson::object>()["-114"] = picojson::value("514");
   	v1.get<picojson::object>()["364"].set<picojson::array>(picojson::array());
   	v1.get<picojson::object>()["364"].get<picojson::array>().push_back(picojson::value(334.0));
   	picojson::value &v2 = v1.get<picojson::object>()["1919"];
   	v2.set<picojson::object>(picojson::object());
   	v2.get<picojson::object>()["893"] = picojson::value(810.0);
-    is(v1.serialize(), string(R"(('114':'514','1919':('893':810),'364':!(334)))"), "modification succeed");
+    is(v1.serialize(), string(R"(('-114':514,1919:(893:810),364:!(334)))"), "modification succeed");
   }
 
 #define TEST(json, msg) do {				\
@@ -270,7 +274,7 @@ int main(void)
     string err;
     err = picojson::parse(v, s, s + strlen(s));
     _ok(err.empty(), "parse test data for prettifying output");
-    _ok(v.serialize() == R"(('a':1,'b':!(2,('b1':'abc')),'c':(),'d':!()))", "non-prettifying output");
+    _ok(v.serialize() == R"((a:1,b:!(2,(b1:abc)),c:(),d:!()))", "non-prettifying output");
   }
 
   try {
