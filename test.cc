@@ -75,7 +75,7 @@ int main(void)
 
 #undef TEST
 
-#define TEST(in, type, cmp, serialize_test) {				\
+#define TEST(in, type, cmp) {				\
     picojson::value v;							\
     const char* s = in;							\
     string err = picojson::parse(v, s, s + strlen(s));			\
@@ -83,25 +83,35 @@ int main(void)
     _ok(v.is<type>(), in " check type");					\
     is(v.get<type>(), static_cast<type>(cmp), in " correct output");			\
     is(*s, '\0', in " read to eof");					\
-    if (serialize_test) {						\
-      is(v.serialize(), string(in), in " serialize");			\
-    }									\
   }
-  TEST("!f", bool, false, true);
-  TEST("!t", bool, true, true);
-  TEST("90.5", double, 90.5, false);
-  TEST("1.7976931348623157e+308", double, std::numeric_limits<double>::max(), false);
-  TEST(R"('hello')", string, string("hello"), true);
+  TEST("!f", bool, false);
+  TEST("!t", bool, true);
+  TEST("90.5", double, 90.5);
+  TEST("1.7976931348623157e+308", double, std::numeric_limits<double>::max());
+  TEST(R"('hello')", string, string("hello"));
   TEST(u8R"('aクリス')", string,
-       string("a\xe3\x82\xaf\xe3\x83\xaa\xe3\x82\xb9"), false);
-  TEST(u8R"('𠀋')", string, string("\xf0\xa0\x80\x8b"), false);
-  TEST(R"('Amazing!!')", string, string("Amazing!"), true);
-  TEST(R"('What!'s RISON?')", string, string("What's RISON?"), true);
+       string("a\xe3\x82\xaf\xe3\x83\xaa\xe3\x82\xb9"));
+  TEST(u8R"('𠀋')", string, string("\xf0\xa0\x80\x8b"));
+  TEST(R"('Amazing!!')", string, string("Amazing!"));
+  TEST(R"('What!'s RISON?')", string, string("What's RISON?"));
 #ifdef PICOJSON_USE_INT64
-  TEST("0", int64_t, 0, true);
-  TEST("-9223372036854775808", int64_t, std::numeric_limits<int64_t>::min(), true);
-  TEST("9223372036854775807", int64_t, std::numeric_limits<int64_t>::max(), true);
+  TEST("0", int64_t, 0);
+  TEST("-9223372036854775808", int64_t, std::numeric_limits<int64_t>::min());
+  TEST("9223372036854775807", int64_t, std::numeric_limits<int64_t>::max());
 #endif
+#undef TEST
+
+#define TEST(actual, reserialized_expected) {				\
+    picojson::value v;							\
+    const char* s = actual;							\
+    string err = picojson::parse(v, s, s + strlen(s));			\
+    is(v.serialize(), string(reserialized_expected), actual " reserialization");			\
+  }
+  TEST("!f", "!f");
+  TEST("!t", "!t");
+  TEST("'hello'", "'hello'");
+  TEST("'Amazing!!'", "'Amazing!!'");
+  TEST("'What!'s RISON?'", "'What!'s RISON?'");
 #undef TEST
 
 #define TEST(type, expr) {					       \
