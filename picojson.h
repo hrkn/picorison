@@ -527,9 +527,11 @@ template <typename Iter> struct serialize_str_char {
 };
 
 template <typename Iter> void serialize_str(const std::string &s, Iter oi) {
-  const std::string need_to_quoted = "!'(),- ";
-  bool needs_quote = std::any_of(s.begin(), s.end(), [&need_to_quoted](char c) {
-    return need_to_quoted.find(c) != std::string::npos;
+  const std::string need_to_quoted_start = "-0123456789";
+  const std::string need_to_quoted_graph = "!\"#$%&'()*+,:;<=>?@[\\]^`{|} ";
+  bool needs_quote = (need_to_quoted_start.find(s[0]) != std::string::npos)
+      || std::any_of(s.begin(), s.end(), [&need_to_quoted_graph](char c) {
+    return need_to_quoted_graph.find(c) != std::string::npos;
   });
   if (needs_quote) { *oi++ = '\''; }
   serialize_str_char<Iter> process_char = {oi};

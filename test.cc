@@ -114,6 +114,7 @@ int main(void)
   TEST("'-123'", "'-123'");
   TEST("',32'", "',32'");
   TEST("'33-4'", "'33-4'");
+  TEST("'abc33-4'", "abc33-4");
   TEST("'Amazing!!'", "'Amazing!!'");
   TEST("'What!'s RISON?'", "'What!'s RISON?'");
 #undef TEST
@@ -172,7 +173,7 @@ int main(void)
   	picojson::value &v2 = v1.get<picojson::object>()["1919"];
   	v2.set<picojson::object>(picojson::object());
   	v2.get<picojson::object>()["893"] = picojson::value(810.0);
-    is(v1.serialize(), string(R"(('-114':514,1919:(893:810),364:!(334)))"), "modification succeed");
+    is(v1.serialize(), string(R"(('-114':'514','1919':('893':810),'364':!(334)))"), "modification succeed");
   }
 
 #define TEST(json, msg) do {				\
