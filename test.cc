@@ -110,6 +110,7 @@ int main(void)
   TEST("!f", "!f");
   TEST("!t", "!t");
   TEST("'hello'", "hello");
+  TEST("hell-o_1~2.3", "hell-o_1~2.3");  // parsed as id
   TEST("'he is hero'", "'he is hero'");
   TEST("'-123'", "'-123'");
   TEST("',32'", "',32'");
@@ -192,9 +193,9 @@ int main(void)
     picojson::value v1, v2;
     const char *s;
     string err;
-    s = R"(( 'b': !t, 'a': !(1,2,'three'), 'd': 2 ))";
+    s = R"(( 'b': !t, n:(a:'b','C':d-,'-bbb':'a'), 'a': !(1,2,'three'), 'd': 2))";
     err = picojson::parse(v1, s, s + strlen(s));
-    s = R"(( 'd': 2.0, 'b': !t, 'a': !(1,2,'three') ))";
+    s = R"(( 'd': 2.0, b: !t, a: !(1,2,three), n:('-bbb':a,C:d-,a:b) ))";
     err = picojson::parse(v2, s, s + strlen(s));
     _ok((v1 == v2), "check == operator in deep comparison");
   }

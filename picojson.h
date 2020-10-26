@@ -29,6 +29,7 @@
 #define picojson_h
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -37,6 +38,7 @@
 #include <iterator>
 #include <limits>
 #include <map>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -682,6 +684,23 @@ template <typename String, typename Iter> inline bool _parse_string(String &out,
   return false;
 }
 
+template <typename String, typename Iter> inline bool _parse_id(String &out, input<Iter> &in) {
+  int ch = *in.cur();
+  if (std::isdigit(ch) || ch == '-') {
+    return false;
+  }
+  const std::set<char> allowed_graph {'-', '_', '.', '/', '~'};
+  while (1) {
+    ch = in.getc();
+    if (!std::isalnum(ch) && !allowed_graph.count(static_cast<char>(ch))) {
+      in.ungetc();
+      break;
+    }
+    out.push_back(static_cast<char>(ch));
+  }
+  return true;
+}
+
 template <typename Context, typename Iter> inline bool _parse_array(Context &ctx, input<Iter> &in) {
   if (!ctx.parse_array_start()) {
     return false;
@@ -708,7 +727,13 @@ template <typename Context, typename Iter> inline bool _parse_object(Context &ct
   }
   do {
     std::string key;
-    if (!in.expect('\'') || !_parse_string(key, in) || !in.expect(':')) {
+    bool parsed_key = false;
+    if (in.expect('\'')) {
+      parsed_key = _parse_string(key, in);
+    } else {
+      parsed_key = _parse_id(key, in);
+    }
+    if (parsed_key && !in.expect(':')) {
       return false;
     }
     if (!ctx.parse_object_item(in, key)) {
@@ -788,6 +813,19 @@ template <typename Context, typename Iter> inline bool _parse(Context &ctx, inpu
         return true;
       }
       return false;
+    } else {
+      if (std::iscntrl(ch)) {
+        return false;
+      }
+
+      // parse as id token
+      in.ungetc();
+      std::string id;
+      if (_parse_id(id, in)) {
+        ctx.set_string(id);
+        return true;
+      }
+      return false;
     }
     break;
   }
@@ -809,6 +847,9 @@ public:
   }
 #endif
   bool set_number(double) {
+    return false;
+  }
+  bool set_string(const std::string &) {
     return false;
   }
   template <typename Iter> bool parse_string(input<Iter> &) {
@@ -856,7 +897,12 @@ public:
     *out_ = value(f);
     return true;
   }
+  bool set_string(const std::string &s) {
+    *out_ = value(s);
+    return true;
+  }
   template <typename Iter> bool parse_string(input<Iter> &in) {
+    // TODO: use set_string()
     *out_ = value(string_type, false);
     return _parse_string(out_->get<std::string>(), in);
   }
@@ -910,6 +956,9 @@ public:
   }
 #endif
   bool set_number(double) {
+    return true;
+  }
+  bool set_string(const std::string &) {
     return true;
   }
   template <typename Iter> bool parse_string(input<Iter> &in) {
