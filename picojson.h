@@ -76,16 +76,6 @@ extern "C" {
 #endif
 #endif
 
-// to disable the use of localeconv(3), set PICOJSON_USE_LOCALE to 0
-#ifndef PICOJSON_USE_LOCALE
-#define PICOJSON_USE_LOCALE 1
-#endif
-#if PICOJSON_USE_LOCALE
-extern "C" {
-#include <locale.h>
-}
-#endif
-
 #ifndef PICOJSON_ASSERT
 #define PICOJSON_ASSERT(e)                                                                                                         \
   do {                                                                                                                             \
@@ -473,17 +463,6 @@ inline std::string value::to_str() const {
     char buf[256];
     double tmp;
     SNPRINTF(buf, sizeof(buf), fabs(u_.number_) < (1ULL << 53) && modf(u_.number_, &tmp) == 0 ? "%.f" : "%.17g", u_.number_);
-#if PICOJSON_USE_LOCALE
-    char *decimal_point = localeconv()->decimal_point;
-    if (strcmp(decimal_point, ".") != 0) {
-      size_t decimal_point_len = strlen(decimal_point);
-      for (char *p = buf; *p != '\0'; ++p) {
-        if (strncmp(p, decimal_point, decimal_point_len) == 0) {
-          return std::string(buf, p) + "." + (p + decimal_point_len);
-        }
-      }
-    }
-#endif
     return buf;
   }
   case string_type:
@@ -750,11 +729,7 @@ template <typename Iter> inline std::string _parse_number(input<Iter> &in) {
     if (('0' <= ch && ch <= '9') || ch == '+' || ch == '-' || ch == 'e' || ch == 'E') {
       num_str.push_back(static_cast<char>(ch));
     } else if (ch == '.') {
-#if PICOJSON_USE_LOCALE
-      num_str += localeconv()->decimal_point;
-#else
       num_str.push_back('.');
-#endif
     } else {
       in.ungetc();
       break;

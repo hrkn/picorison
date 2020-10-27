@@ -42,10 +42,6 @@ using namespace std;
 
 int main(void)
 {
-#if PICOJSON_USE_LOCALE
-  setlocale(LC_ALL, "");
-#endif
-
   // constructors
 #define TEST(expr, expected) \
     is(picojson::value expr .serialize(), string(expected), "picojson::value" #expr)
