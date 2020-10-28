@@ -190,6 +190,7 @@ int main(void)
   TEST("(]", "1 near: ]");
   TEST("\n\bbell", "2 near: bell");
   TEST("'abc\nd'", "1 near: ");
+  TEST("(123:456)", "1 near: :456)");  // Unquoted fully numeric key isn't allowed
 #undef TEST
 
   {
