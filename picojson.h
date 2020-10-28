@@ -619,17 +619,7 @@ public:
   int line() const {
     return line_;
   }
-  void skip_ws() {
-    while (1) {
-      int ch = getc();
-      if (!(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')) {
-        ungetc();
-        break;
-      }
-    }
-  }
   bool expect(const int expected) {
-    skip_ws();
     if (getc() != expected) {
       ungetc();
       return false;
@@ -751,7 +741,6 @@ template <typename Iter> inline std::string _parse_number(input<Iter> &in) {
 }
 
 template <typename Context, typename Iter> inline bool _parse(Context &ctx, input<Iter> &in) {
-  in.skip_ws();
   int ch = in.getc();
   switch (ch) {
   case '!':                                                                                                                         \
