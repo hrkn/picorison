@@ -71,14 +71,14 @@ int main(void)
 
 #undef TEST
 
-#define TEST(in, type, cmp) {				\
-    picorison::value v;							\
-    const char* s = in;							\
-    string err = picorison::parse(v, s, s + strlen(s));			\
-    _ok(err.empty(), in " no error");					\
-    _ok(v.is<type>(), in " check type");					\
-    is(v.get<type>(), static_cast<type>(cmp), in " correct output");			\
-    is(*s, '\0', in " read to eof");					\
+#define TEST(in, type, cmp) {        \
+    picorison::value v;              \
+    const char* s = in;              \
+    string err = picorison::parse(v, s, s + strlen(s));      \
+    _ok(err.empty(), in " no error");          \
+    _ok(v.is<type>(), in " check type");          \
+    is(v.get<type>(), static_cast<type>(cmp), in " correct output");      \
+    is(*s, '\0', in " read to eof");          \
   }
   TEST("!f", bool, false);
   TEST("!t", bool, true);
@@ -98,11 +98,11 @@ int main(void)
 #endif
 #undef TEST
 
-#define TEST(actual, reserialized_expected) {				\
-    picorison::value v;							\
-    const char* s = actual;							\
-    string err = picorison::parse(v, s, s + strlen(s));			\
-    is(v.serialize(), string(reserialized_expected), actual " reserialization");			\
+#define TEST(actual, reserialized_expected) {        \
+    picorison::value v;              \
+    const char* s = actual;              \
+    string err = picorison::parse(v, s, s + strlen(s));      \
+    is(v.serialize(), string(reserialized_expected), actual " reserialization");      \
   }
   TEST("!f", "!f");
   TEST("!t", "!t");
@@ -123,12 +123,12 @@ int main(void)
 #endif
 #undef TEST
 
-#define TEST(type, expr) {					       \
-    picorison::value v;						       \
-    const char *s = expr;					       \
-    string err = picorison::parse(v, s, s + strlen(s));		       \
-    _ok(err.empty(), "empty " #type " no error");		       \
-    _ok(v.is<picorison::type>(), "empty " #type " check type");	       \
+#define TEST(type, expr) {                 \
+    picorison::value v;                   \
+    const char *s = expr;                 \
+    string err = picorison::parse(v, s, s + strlen(s));           \
+    _ok(err.empty(), "empty " #type " no error");           \
+    _ok(v.is<picorison::type>(), "empty " #type " check type");         \
     _ok(v.get<picorison::type>().empty(), "check " #type " array size"); \
   }
   TEST(array, "!()");
@@ -170,21 +170,21 @@ int main(void)
 
   {
     picorison::value v1;
-  	v1.set<picorison::object>(picorison::object());
+    v1.set<picorison::object>(picorison::object());
     v1.get<picorison::object>()["-114"] = picorison::value("514");
-  	v1.get<picorison::object>()["364"].set<picorison::array>(picorison::array());
-  	v1.get<picorison::object>()["364"].get<picorison::array>().push_back(picorison::value(334.0));
-  	picorison::value &v2 = v1.get<picorison::object>()["1919"];
-  	v2.set<picorison::object>(picorison::object());
-  	v2.get<picorison::object>()["893"] = picorison::value(810.0);
+    v1.get<picorison::object>()["364"].set<picorison::array>(picorison::array());
+    v1.get<picorison::object>()["364"].get<picorison::array>().push_back(picorison::value(334.0));
+    picorison::value &v2 = v1.get<picorison::object>()["1919"];
+    v2.set<picorison::object>(picorison::object());
+    v2.get<picorison::object>()["893"] = picorison::value(810.0);
     is(v1.serialize(), string(R"(('-114':'514','1919':('893':810),'364':!(334)))"), "modification succeed");
   }
 
-#define TEST(rison, msg) do {				\
-    picorison::value v;					\
-    const char *s = rison;				\
-    string err = picorison::parse(v, s, s + strlen(s));	\
-    is(err, string("syntax error at line " msg), msg);	\
+#define TEST(rison, msg) do {        \
+    picorison::value v;          \
+    const char *s = rison;        \
+    string err = picorison::parse(v, s, s + strlen(s));  \
+    is(err, string("syntax error at line " msg), msg);  \
   } while (0)
   TEST("!Foa", "1 near: oa");
   TEST("(]", "1 near: ]");
