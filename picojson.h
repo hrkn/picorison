@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -460,10 +461,21 @@ inline std::string value::to_str() const {
   }
 #endif
   case number_type: {
-    char buf[256];
-    double tmp;
-    SNPRINTF(buf, sizeof(buf), fabs(u_.number_) < (1ULL << 53) && modf(u_.number_, &tmp) == 0 ? "%.f" : "%.17g", u_.number_);
-    return buf;
+    char buf[64];
+    double integral;
+    SNPRINTF(
+      buf,
+      sizeof(buf),
+      std::fabs(u_.number_) < (1ULL << 53) && std::modf(u_.number_, &integral) == 0
+        ? "%.f"
+        : "%.17g",
+      u_.number_);
+    std::string s(buf);
+    std::string::size_type pos = s.rfind("e+");
+    if (pos != std::string::npos) {
+      s.replace(pos, std::strlen("e+"), "e");
+    }
+    return s;
   }
   case string_type:
     return *u_.string_;
@@ -726,7 +738,7 @@ template <typename Iter> inline std::string _parse_number(input<Iter> &in) {
   std::string num_str;
   while (1) {
     int ch = in.getc();
-    if (('0' <= ch && ch <= '9') || ch == '+' || ch == '-' || ch == 'e' || ch == 'E') {
+    if (('0' <= ch && ch <= '9') || ch == '-' || ch == 'e') {
       num_str.push_back(static_cast<char>(ch));
     } else if (ch == '.') {
       num_str.push_back('.');

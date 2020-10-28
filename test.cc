@@ -83,7 +83,8 @@ int main(void)
   TEST("!f", bool, false);
   TEST("!t", bool, true);
   TEST("90.5", double, 90.5);
-  TEST("1.7976931348623157e+308", double, std::numeric_limits<double>::max());
+  TEST("1.7976931348623157e308", double, std::numeric_limits<double>::max());
+  TEST("2.2250738585072014e-308", double, std::numeric_limits<double>::min());
   TEST(R"('hello')", string, string("hello"));
   TEST(u8R"('aクリス')", string,
        string("a\xe3\x82\xaf\xe3\x83\xaa\xe3\x82\xb9"));
@@ -114,6 +115,12 @@ int main(void)
   TEST("'abc33-4'", "abc33-4");
   TEST("'Amazing!!'", "'Amazing!!'");
   TEST("'What!'s RISON?'", "'What!'s RISON?'");
+  TEST("72057594037927936", "72057594037927936");
+#ifdef PICOJSON_USE_INT64
+  TEST("144115188075855872", "144115188075855872");
+#else
+  TEST("144115188075855872", "1.4411518807585587e17");
+#endif
 #undef TEST
 
 #define TEST(type, expr) {					       \
