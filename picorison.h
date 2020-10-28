@@ -25,8 +25,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef picojson_h
-#define picojson_h
+#ifndef picorison_h
+#define picorison_h
 
 #include <algorithm>
 #include <cctype>
@@ -1057,4 +1057,4 @@ inline std::ostream &operator<<(std::ostream &os, const picojson::value &x) {
 #pragma warning(pop)
 #endif
 
-#endif
+#endif  // picorison_h

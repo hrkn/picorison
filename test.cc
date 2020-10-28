@@ -25,7 +25,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "picojson.h"
+#include "picorison.h"
 #include "picotest/picotest.h"
 
 #ifdef _MSC_VER
