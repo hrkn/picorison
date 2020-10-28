@@ -42,20 +42,16 @@ using namespace std;
 
 int main(void)
 {
-#if PICOJSON_USE_LOCALE
-  setlocale(LC_ALL, "");
-#endif
-
   // constructors
 #define TEST(expr, expected) \
     is(picojson::value expr .serialize(), string(expected), "picojson::value" #expr)
 
-  TEST( (true),  "true");
-  TEST( (false), "false");
+  TEST( (true),  "!t");
+  TEST( (false), "!f");
   TEST( (42.0),   "42");
-  TEST( (string("hello")), R"("hello")");
-  TEST( ("hello"), R"("hello")");
-  TEST( ("hello", 4), R"("hell")");
+  TEST( (string("hello")), "hello");
+  TEST( ("hello"), "hello");
+  TEST( ("hello", 4), "hell");
 
   {
     double a = 1;
@@ -75,7 +71,7 @@ int main(void)
 
 #undef TEST
 
-#define TEST(in, type, cmp, serialize_test) {				\
+#define TEST(in, type, cmp) {				\
     picojson::value v;							\
     const char* s = in;							\
     string err = picojson::parse(v, s, s + strlen(s));			\
@@ -83,24 +79,47 @@ int main(void)
     _ok(v.is<type>(), in " check type");					\
     is(v.get<type>(), static_cast<type>(cmp), in " correct output");			\
     is(*s, '\0', in " read to eof");					\
-    if (serialize_test) {						\
-      is(v.serialize(), string(in), in " serialize");			\
-    }									\
   }
-  TEST("false", bool, false, true);
-  TEST("true", bool, true, true);
-  TEST("90.5", double, 90.5, false);
-  TEST("1.7976931348623157e+308", double, std::numeric_limits<double>::max(), false);
-  TEST(R"("hello")", string, string("hello"), true);
-  TEST(R"("\"\\\/\b\f\n\r\t")", string, string("\"\\/\b\f\n\r\t"),
-       true);
-  TEST(R"("\u0061\u30af\u30ea\u30b9")", string,
-       string("a\xe3\x82\xaf\xe3\x83\xaa\xe3\x82\xb9"), false);
-  TEST(R"("\ud840\udc0b")", string, string("\xf0\xa0\x80\x8b"), false);
+  TEST("!f", bool, false);
+  TEST("!t", bool, true);
+  TEST("90.5", double, 90.5);
+  TEST("1.7976931348623157e308", double, std::numeric_limits<double>::max());
+  TEST("2.2250738585072014e-308", double, std::numeric_limits<double>::min());
+  TEST(R"('hello')", string, string("hello"));
+  TEST(u8R"('aクリス')", string,
+       string("a\xe3\x82\xaf\xe3\x83\xaa\xe3\x82\xb9"));
+  TEST(u8R"('𠀋')", string, string("\xf0\xa0\x80\x8b"));
+  TEST(R"('Amazing!!')", string, string("Amazing!"));
+  TEST(R"('What!'s RISON?')", string, string("What's RISON?"));
 #ifdef PICOJSON_USE_INT64
-  TEST("0", int64_t, 0, true);
-  TEST("-9223372036854775808", int64_t, std::numeric_limits<int64_t>::min(), true);
-  TEST("9223372036854775807", int64_t, std::numeric_limits<int64_t>::max(), true);
+  TEST("0", int64_t, 0);
+  TEST("-9223372036854775808", int64_t, std::numeric_limits<int64_t>::min());
+  TEST("9223372036854775807", int64_t, std::numeric_limits<int64_t>::max());
+#endif
+#undef TEST
+
+#define TEST(actual, reserialized_expected) {				\
+    picojson::value v;							\
+    const char* s = actual;							\
+    string err = picojson::parse(v, s, s + strlen(s));			\
+    is(v.serialize(), string(reserialized_expected), actual " reserialization");			\
+  }
+  TEST("!f", "!f");
+  TEST("!t", "!t");
+  TEST("'hello'", "hello");
+  TEST("hell-o_1~2.3", "hell-o_1~2.3");  // parsed as id
+  TEST("'he is hero'", "'he is hero'");
+  TEST("'-123'", "'-123'");
+  TEST("',32'", "',32'");
+  TEST("'33-4'", "'33-4'");
+  TEST("'abc33-4'", "abc33-4");
+  TEST("'Amazing!!'", "'Amazing!!'");
+  TEST("'What!'s RISON?'", "'What!'s RISON?'");
+  TEST("72057594037927936", "72057594037927936");
+#ifdef PICOJSON_USE_INT64
+  TEST("144115188075855872", "144115188075855872");
+#else
+  TEST("144115188075855872", "1.4411518807585587e17");
 #endif
 #undef TEST
 
@@ -112,13 +131,13 @@ int main(void)
     _ok(v.is<picojson::type>(), "empty " #type " check type");	       \
     _ok(v.get<picojson::type>().empty(), "check " #type " array size"); \
   }
-  TEST(array, "[]");
-  TEST(object, "{}");
+  TEST(array, "!()");
+  TEST(object, "()");
 #undef TEST
 
   {
     picojson::value v;
-    const char *s = R"([1,true,"hello"])";
+    const char *s = R"(!(1,!t,'hello'))";
     string err = picojson::parse(v, s, s + strlen(s));
     _ok(err.empty(), "array no error");
     _ok(v.is<picojson::array>(), "array check type");
@@ -137,7 +156,7 @@ int main(void)
 
   {
     picojson::value v;
-    const char *s = R"({ "a": true })";
+    const char *s = R"(('a':!t))";
     string err = picojson::parse(v, s, s + strlen(s));
     _ok(err.empty(), "object no error");
     _ok(v.is<picojson::object>(), "object check type");
@@ -145,20 +164,20 @@ int main(void)
     _ok(v.contains("a"), "check contains property");
     _ok(v.get("a").is<bool>(), "check bool property exists");
     is(v.get("a").get<bool>(), true, "check bool property value");
-    is(v.serialize(), string(R"({"a":true})"), "serialize object");
+    is(v.serialize(), string(R"((a:!t))"), "serialize object");
     _ok(!v.contains("z"), "check not contains property");
   }
 
   {
     picojson::value v1;
   	v1.set<picojson::object>(picojson::object());
-  	v1.get<picojson::object>()["114"] = picojson::value("514");
+    v1.get<picojson::object>()["-114"] = picojson::value("514");
   	v1.get<picojson::object>()["364"].set<picojson::array>(picojson::array());
   	v1.get<picojson::object>()["364"].get<picojson::array>().push_back(picojson::value(334.0));
   	picojson::value &v2 = v1.get<picojson::object>()["1919"];
   	v2.set<picojson::object>(picojson::object());
   	v2.get<picojson::object>()["893"] = picojson::value(810.0);
-    is(v1.serialize(), string(R"({"114":"514","1919":{"893":810},"364":[334]})"), "modification succeed");
+    is(v1.serialize(), string(R"(('-114':'514','1919':('893':810),'364':!(334)))"), "modification succeed");
   }
 
 #define TEST(json, msg) do {				\
@@ -167,19 +186,21 @@ int main(void)
     string err = picojson::parse(v, s, s + strlen(s));	\
     is(err, string("syntax error at line " msg), msg);	\
   } while (0)
-  TEST("falsoa", "1 near: oa");
-  TEST("{]", "1 near: ]");
-  TEST("\n\bbell", "2 near: bell");
-  TEST("\"abc\nd\"", "1 near: ");
+  TEST("!Foa", "1 near: oa");
+  TEST("(]", "1 near: ]");
+  TEST("\n\bbell", "1 near: bell");
+  TEST("'abc\nd'", "1 near: ");
+  TEST("(123:456)", "1 near: :456)");  // Unquoted fully numeric key isn't allowed
+  TEST("( 'a': !t )", "1 near:  'a': !t )");  // No whitespace is permitted except inside quoted strings
 #undef TEST
 
   {
     picojson::value v1, v2;
     const char *s;
     string err;
-    s = R"({ "b": true, "a": [1,2,"three"], "d": 2 })";
+    s = R"(('b':!t,n:(a:'b','C':d-,'-bbb':'a'),'a':!(1,2,'three'),'d':2))";
     err = picojson::parse(v1, s, s + strlen(s));
-    s = R"({ "d": 2.0, "b": true, "a": [1,2,"three"] })";
+    s = R"(('d':2.0,b:!t,a:!(1,2,three),n:('-bbb':a,C:d-,a:b)))";
     err = picojson::parse(v2, s, s + strlen(s));
     _ok((v1 == v2), "check == operator in deep comparison");
   }
@@ -188,9 +209,9 @@ int main(void)
     picojson::value v1, v2;
     const char *s;
     string err;
-    s = R"({ "b": true, "a": [1,2,"three"], "d": 2 })";
+    s = R"(('b':!t,'a':!(1,2,'three'),'d':2))";
     err = picojson::parse(v1, s, s + strlen(s));
-    s = R"({ "d": 2.0, "a": [1,"three"], "b": true })";
+    s = R"(('d':2.0,'a':!(1,'three'),'b':!t))";
     err = picojson::parse(v2, s, s + strlen(s));
     _ok((v1 != v2), "check != operator for array in deep comparison");
   }
@@ -199,9 +220,9 @@ int main(void)
     picojson::value v1, v2;
     const char *s;
     string err;
-    s = R"({ "b": true, "a": [1,2,"three"], "d": 2 })";
+    s = R"(('b':!t,'a':!(1,2,'three'),'d':2))";
     err = picojson::parse(v1, s, s + strlen(s));
-    s = R"({ "d": 2.0, "a": [1,2,"three"], "b": false })";
+    s = R"(('d':2.0,'a':!(1,2,'three'),'b':false))";
     err = picojson::parse(v2, s, s + strlen(s));
     _ok((v1 != v2), "check != operator for object in deep comparison");
   }
@@ -210,7 +231,7 @@ int main(void)
     picojson::value v1, v2;
     const char *s;
     string err;
-    s = R"({ "b": true, "a": [1,2,"three"], "d": 2 })";
+    s = R"(('b':!t,'a':!(1,2,'three'),'d':2))";
     err = picojson::parse(v1, s, s + strlen(s));
     picojson::object& o = v1.get<picojson::object>();
     o.erase("b");
@@ -218,7 +239,7 @@ int main(void)
     picojson::array::iterator i;
     i = std::remove(a.begin(), a.end(), picojson::value(std::string("three")));
     a.erase(i, a.end());
-    s = R"({ "a": [1,2], "d": 2 })";
+    s = R"(('a':!(1,2),'d':2))";
     err = picojson::parse(v2, s, s + strlen(s));
     _ok((v1 == v2), "check erase()");
   }
@@ -227,7 +248,7 @@ int main(void)
      "integral number should be serialized as a integer");
 
   {
-    const char* s = R"({ "a": [1,2], "d": 2 })";
+    const char* s = R"(('a':!(1,2),'d':2))";
     picojson::null_parse_context ctx;
     string err;
     picojson::_parse(ctx, s, s + strlen(s), &err);
@@ -256,11 +277,11 @@ int main(void)
 
   {
     picojson::value v;
-    const char *s = R"({ "a": 1, "b": [ 2, { "b1": "abc" } ], "c": {}, "d": [] })";
+    const char *s = R"(('a':1,'b':!(2,('b1':'abc')),'c':(),'d':!()))";
     string err;
     err = picojson::parse(v, s, s + strlen(s));
     _ok(err.empty(), "parse test data for prettifying output");
-    _ok(v.serialize() == R"({"a":1,"b":[2,{"b1":"abc"}],"c":{},"d":[]})", "non-prettifying output");
+    _ok(v.serialize() == R"((a:1,b:!(2,(b1:abc)),c:(),d:!()))", "non-prettifying output");
   }
 
   try {
@@ -308,7 +329,7 @@ int main(void)
 
   {
     picojson::value v;
-    std::string err = picojson::parse(v, R"([ 1, "abc" ])");
+    std::string err = picojson::parse(v, R"(!(1,'abc'))");
     _ok(err.empty(), "simple API no error");
     _ok(v.is<picojson::array>(), "simple API return type is array");
     is(v.get<picojson::array>().size(), 2, "simple API array size");
