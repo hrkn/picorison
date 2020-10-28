@@ -11,7 +11,7 @@ test-core: picorison.h test.cc picotest/picotest.c picotest/picotest.h
 	$(CXX) -std=c++11 -Wall test.cc picotest/picotest.c -o $@
 
 test-core-int64: picorison.h test.cc picotest/picotest.c picotest/picotest.h
-	$(CXX) -std=c++11 -Wall -DPICOJSON_USE_INT64 test.cc picotest/picotest.c -o $@
+	$(CXX) -std=c++11 -Wall -DPICORISON_USE_INT64 test.cc picotest/picotest.c -o $@
 
 clean:
 	rm -f test-core test-core-int64
