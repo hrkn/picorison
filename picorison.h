@@ -25,8 +25,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef picojson_h
-#define picojson_h
+#ifndef picorison_h
+#define picorison_h
 
 #include <algorithm>
 #include <cctype>
@@ -61,11 +61,11 @@ extern "C" {
 #endif
 
 #if (__cplusplus < 201103L)
-  #error "PicoJSON requires C++11 or higher standard"
+  #error "PicoRISON requires C++11 or higher standard"
 #endif
 
 // experimental support for int64_t (see README.mkdn for detail)
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
 #define __STDC_FORMAT_MACROS
 #include <cerrno>
 #if __cplusplus >= 201103L
@@ -77,8 +77,8 @@ extern "C" {
 #endif
 #endif
 
-#ifndef PICOJSON_ASSERT
-#define PICOJSON_ASSERT(e)                                                                                                         \
+#ifndef PICORISON_ASSERT
+#define PICORISON_ASSERT(e)                                                                                                         \
   do {                                                                                                                             \
     if (!(e))                                                                                                                      \
       throw std::runtime_error(#e);                                                                                                \
@@ -96,7 +96,7 @@ extern "C" {
 #define SNPRINTF snprintf
 #endif
 
-namespace picojson {
+namespace picorison {
 
 enum {
   null_type,
@@ -105,7 +105,7 @@ enum {
   string_type,
   array_type,
   object_type
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
   ,
   int64_type
 #endif
@@ -122,7 +122,7 @@ public:
   union _storage {
     bool boolean_;
     double number_;
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
     int64_t int64_;
 #endif
     std::string *string_;
@@ -138,7 +138,7 @@ public:
   value();
   value(int type, bool);
   explicit value(bool b);
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
   explicit value(int64_t i);
 #endif
   explicit value(double n);
@@ -194,7 +194,7 @@ inline value::value(int type, bool) : type_(type), u_() {
     break
     INIT(boolean_, false);
     INIT(number_, 0.0);
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
     INIT(int64_, 0);
 #endif
     INIT(string_, new std::string());
@@ -210,7 +210,7 @@ inline value::value(bool b) : type_(boolean_type), u_() {
   u_.boolean_ = b;
 }
 
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
 inline value::value(int64_t i) : type_(int64_type), u_() {
   u_.int64_ = i;
 }
@@ -324,7 +324,7 @@ inline void value::swap(value &x) noexcept {
   }
 IS(null, null)
 IS(bool, boolean)
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
 IS(int64_t, int64)
 #endif
 IS(std::string, string)
@@ -333,7 +333,7 @@ IS(object, object)
 #undef IS
 template <> inline bool value::is<double>() const {
   return type_ == number_type
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
          || type_ == int64_type
 #endif
       ;
@@ -341,18 +341,18 @@ template <> inline bool value::is<double>() const {
 
 #define GET(ctype, var)                                                                                                            \
   template <> inline const ctype &value::get<ctype>() const {                                                                      \
-    PICOJSON_ASSERT("type mismatch! call is<type>() before get<type>()" && is<ctype>());                                           \
+    PICORISON_ASSERT("type mismatch! call is<type>() before get<type>()" && is<ctype>());                                           \
     return var;                                                                                                                    \
   }                                                                                                                                \
   template <> inline ctype &value::get<ctype>() {                                                                                  \
-    PICOJSON_ASSERT("type mismatch! call is<type>() before get<type>()" && is<ctype>());                                           \
+    PICORISON_ASSERT("type mismatch! call is<type>() before get<type>()" && is<ctype>());                                           \
     return var;                                                                                                                    \
   }
 GET(bool, u_.boolean_)
 GET(std::string, *u_.string_)
 GET(array, *u_.array_)
 GET(object, *u_.object_)
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
 GET(double,
     (type_ == int64_type && (
       (const_cast<value *>(this)->type_ = number_type), (const_cast<value *>(this)->u_.number_ = u_.int64_)
@@ -375,7 +375,7 @@ SET(std::string, string, u_.string_ = new std::string(_val);)
 SET(array, array, u_.array_ = new array(_val);)
 SET(object, object, u_.object_ = new object(_val);)
 SET(double, number, u_.number_ = _val;)
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
 SET(int64_t, int64, u_.int64_ = _val;)
 #endif
 #undef SET
@@ -399,7 +399,7 @@ inline bool value::evaluate_as_boolean() const {
     return u_.boolean_;
   case number_type:
     return u_.number_ != 0;
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
   case int64_type:
     return u_.int64_ != 0;
 #endif
@@ -412,37 +412,37 @@ inline bool value::evaluate_as_boolean() const {
 
 inline const value &value::get(const size_t idx) const {
   static value s_null;
-  PICOJSON_ASSERT(is<array>());
+  PICORISON_ASSERT(is<array>());
   return idx < u_.array_->size() ? (*u_.array_)[idx] : s_null;
 }
 
 inline value &value::get(const size_t idx) {
   static value s_null;
-  PICOJSON_ASSERT(is<array>());
+  PICORISON_ASSERT(is<array>());
   return idx < u_.array_->size() ? (*u_.array_)[idx] : s_null;
 }
 
 inline const value &value::get(const std::string &key) const {
   static value s_null;
-  PICOJSON_ASSERT(is<object>());
+  PICORISON_ASSERT(is<object>());
   object::const_iterator i = u_.object_->find(key);
   return i != u_.object_->end() ? i->second : s_null;
 }
 
 inline value &value::get(const std::string &key) {
   static value s_null;
-  PICOJSON_ASSERT(is<object>());
+  PICORISON_ASSERT(is<object>());
   object::iterator i = u_.object_->find(key);
   return i != u_.object_->end() ? i->second : s_null;
 }
 
 inline bool value::contains(const size_t idx) const {
-  PICOJSON_ASSERT(is<array>());
+  PICORISON_ASSERT(is<array>());
   return idx < u_.array_->size();
 }
 
 inline bool value::contains(const std::string &key) const {
-  PICOJSON_ASSERT(is<object>());
+  PICORISON_ASSERT(is<object>());
   object::const_iterator i = u_.object_->find(key);
   return i != u_.object_->end();
 }
@@ -453,7 +453,7 @@ inline std::string value::to_str() const {
     return "!n";
   case boolean_type:
     return u_.boolean_ ? "!t" : "!f";
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
   case int64_type: {
     char buf[sizeof("-9223372036854775808")];
     SNPRINTF(buf, sizeof(buf), "%" PRId64, u_.int64_);
@@ -484,7 +484,7 @@ inline std::string value::to_str() const {
   case object_type:
     return "object";
   default:
-    PICOJSON_ASSERT(0);
+    PICORISON_ASSERT(0);
 #ifdef _MSC_VER
     __assume(0);
 #endif
@@ -772,7 +772,7 @@ template <typename Context, typename Iter> inline bool _parse(Context &ctx, inpu
       if (num_str.empty()) {
         return false;
       }
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
       {
         errno = 0;
         intmax_t ival = strtoimax(num_str.c_str(), &endp, 10);
@@ -817,7 +817,7 @@ public:
   bool set_bool(bool) {
     return false;
   }
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
   bool set_int64(int64_t) {
     return false;
   }
@@ -863,7 +863,7 @@ public:
     *out_ = value(b);
     return true;
   }
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
   bool set_int64(int64_t i) {
     *out_ = value(i);
     return true;
@@ -926,7 +926,7 @@ public:
   bool set_bool(bool) {
     return true;
   }
-#ifdef PICOJSON_USE_INT64
+#ifdef PICORISON_USE_INT64
   bool set_int64(int64_t) {
     return true;
   }
@@ -1018,16 +1018,16 @@ inline const std::string &get_last_error() {
 inline bool operator==(const value &x, const value &y) {
   if (x.is<null>())
     return y.is<null>();
-#define PICOJSON_CMP(type)                                                                                                         \
+#define PICORISON_CMP(type)                                                                                                         \
   if (x.is<type>())                                                                                                                \
   return y.is<type>() && x.get<type>() == y.get<type>()
-  PICOJSON_CMP(bool);
-  PICOJSON_CMP(double);
-  PICOJSON_CMP(std::string);
-  PICOJSON_CMP(array);
-  PICOJSON_CMP(object);
-#undef PICOJSON_CMP
-  PICOJSON_ASSERT(0);
+  PICORISON_CMP(bool);
+  PICORISON_CMP(double);
+  PICORISON_CMP(std::string);
+  PICORISON_CMP(array);
+  PICORISON_CMP(object);
+#undef PICORISON_CMP
+  PICORISON_ASSERT(0);
 #ifdef _MSC_VER
   __assume(0);
 #endif
@@ -1039,17 +1039,17 @@ inline bool operator!=(const value &x, const value &y) {
 }
 }
 
-inline std::istream &operator>>(std::istream &is, picojson::value &x) {
-  picojson::set_last_error(std::string());
-  const std::string err(picojson::parse(x, is));
+inline std::istream &operator>>(std::istream &is, picorison::value &x) {
+  picorison::set_last_error(std::string());
+  const std::string err(picorison::parse(x, is));
   if (!err.empty()) {
-    picojson::set_last_error(err);
+    picorison::set_last_error(err);
     is.setstate(std::ios::failbit);
   }
   return is;
 }
 
-inline std::ostream &operator<<(std::ostream &os, const picojson::value &x) {
+inline std::ostream &operator<<(std::ostream &os, const picorison::value &x) {
   x.serialize(std::ostream_iterator<char>(os));
   return os;
 }
@@ -1057,4 +1057,4 @@ inline std::ostream &operator<<(std::ostream &os, const picojson::value &x) {
 #pragma warning(pop)
 #endif
 
-#endif
+#endif  // picorison_h
